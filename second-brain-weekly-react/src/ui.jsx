@@ -24,6 +24,8 @@ import Health from './pages/Health.jsx'
 import SettingsPage from './pages/Settings.jsx'
 import HomePage from './pages/Home.jsx' // si tu as une Home dédiée; sinon on utilise Home ci-dessous
 import Finance from './pages/Finance.jsx'
+import { Wallet } from 'lucide-react'
+
 
 // --- Dark mode (identique esprit d’avant)
 function useDarkMode() {
@@ -114,7 +116,8 @@ function Home() {
   icon={<Wallet className="icon-tile" />}
   title="Finances"
   subtitle="perso • pro • rappels"
-      </div>
+/>
+
 
       {/* Raccourcis + Astuce du jour (inchangés, purement visuels) */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -182,6 +185,8 @@ export default function App() {
           <Route path="/training" element={<Training />} />
           <Route path="/health" element={<Health />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/finance" element={<Finance />} />
+
         </Routes>
       </main>
     </div>
