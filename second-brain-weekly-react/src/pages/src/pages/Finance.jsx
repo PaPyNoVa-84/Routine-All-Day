@@ -91,6 +91,22 @@ export default function FinancePage(){
       </div>
 
       {/* Tabs */}
+<div className="flex gap-2 text-sm">
+  {[
+    {k:'perso', label:'Perso'},
+    {k:'pro', label:'Pro'},
+    {k:'rappels', label:'Rappels'},
+    {k:'auto', label:'Sortie auto'},          // 👈 AJOUT
+  ].map(b=>(
+    <button
+      key={b.k}
+      onClick={()=>setTab(b.k)}
+      className={`px-3 py-2 rounded-lg border ${tab===b.k ? 'bg-black text-white dark:bg-white dark:text-black':''}`}
+    >
+      {b.label}
+    </button>
+  ))}
+</div>
       <div className="flex gap-2 text-sm">
         {[
           {k:'perso', label:'Perso'},
