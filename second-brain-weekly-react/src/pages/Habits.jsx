@@ -33,8 +33,8 @@ const generalRoutine = [
   { id:'g1', text:"Hydratation (1,5L)" },
   { id:'g2', text:"Étirements 10 min" },
   { id:'g3', text:"Skincare" },
-  { id:'g4', text:"Marche 20 min / sport léger" },
-  { id:'g5', text:"Lecture/formation 20 min" },
+  { id:'g4', text:"Sport/Marcher" },
+  { id:'g5', text:"Travail/Verif Stats" },
 ]
 
 /**
