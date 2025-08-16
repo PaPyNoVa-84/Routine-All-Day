@@ -13,21 +13,21 @@ import {
   Apple,
   Settings,
   ChevronRight,
-  Wallet,             // 👈 icône Finance
+  Wallet, // icône Finance
 } from 'lucide-react'
 
-// --- Pages
+// --- Pages (tes pages existantes)
 import Habits from './pages/Habits.jsx'
 import Goals from './pages/Goals.jsx'
 import Calendar from './pages/Calendar.jsx'
 import Training from './pages/Training.jsx'
 import Health from './pages/Health.jsx'
 import SettingsPage from './pages/Settings.jsx'
-import HomePage from './pages/Home.jsx' // si tu as une Home dédiée; sinon on utilise Home ci-dessous
-import Finance from './pages/Finance.jsx' // 👈 nouvelle page
+import HomePage from './pages/Home.jsx'     // 👈 on garde TA Home
+import Finance from './pages/Finance.jsx'   // 👈 nouvelle page
 
 /* ---------------------------------------
-   Dark mode (identique esprit d’avant)
+   Dark mode (identique à avant)
 ----------------------------------------*/
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
@@ -40,7 +40,7 @@ function useDarkMode() {
 }
 
 /* ---------------------------------------
-   Petite tuile réutilisable
+   Tuile réutilisable (inchangée)
 ----------------------------------------*/
 function Tile({ to, icon, title, subtitle }) {
   return (
@@ -59,78 +59,6 @@ function Tile({ to, icon, title, subtitle }) {
         <ChevronRight className="ml-auto w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition" />
       </div>
     </Link>
-  )
-}
-
-/* ---------------------------------------
-   Home locale (si tu n’utilises pas Home.jsx)
-----------------------------------------*/
-function Home() {
-  const today = new Date()
-  const dateLabel = today.toLocaleDateString('fr-FR', {
-    weekday: 'long', day: '2-digit', month: 'long'
-  })
-
-  return (
-    <div className="space-y-4">
-      {/* Hero */}
-      <div className="card p-5 md:p-6">
-        <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
-          AUJOURD’HUI — {dateLabel}
-        </div>
-        <h1 className="text-2xl md:text-3xl font-bold">Ton tableau de bord</h1>
-      </div>
-
-      {/* Grille de tuiles */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Tile
-          to="/habits"
-          icon={<CheckSquare className="icon-tile" />}
-          title="Mes habitudes"
-          subtitle="& ma to-do list"
-        />
-        <Tile
-          to="/goals"
-          icon={<Target className="icon-tile" />}
-          title="To-do-list"
-          subtitle="& mes notes"
-        />
-        <Tile
-          to="/calendar"
-          icon={<CalendarDays className="icon-tile" />}
-          title="Calendrier"
-          subtitle="plan de la semaine"
-        />
-        <Tile
-          to="/training"
-          icon={<Dumbbell className="icon-tile" />}
-          title="Entraînement"
-          subtitle="sport & progrès"
-        />
-        <Tile
-          to="/health"
-          icon={<Apple className="icon-tile" />}
-          title="Santé"
-          subtitle="sommeil & routine"
-        />
-        <Tile
-          to="/settings"
-          icon={<Settings className="icon-tile" />}
-          title="Réglages"
-          subtitle="thème & presets"
-        />
-        {/* 👇 Nouvelle tuile Finance (même style) */}
-        <Tile
-          to="/finance"
-          icon={<Wallet className="icon-tile" />}
-          title="Finances"
-          subtitle="perso • pro • rappels"
-        />
-      </div>
-
-      {/* Raccourcis / Astuce — laissé tel quel si tu en avais déjà (pur visuel) */}
-      {/* Tu peux conserver tes blocs existants ici */}
-    </div>
   )
 }
 
@@ -163,15 +91,15 @@ export default function App() {
         {/* Main */}
         <main className="container mx-auto px-4 py-6 md:py-8">
           <Routes>
-            {/* Si tu veux utiliser ta page Home.jsx existante, remplace <Home /> par <HomePage /> */}
-            <Route path="/" element={<Home />} />
+            {/* 👇 on utilise ta page Home.jsx */}
+            <Route path="/" element={<HomePage />} />
             <Route path="/habits" element={<Habits />} />
             <Route path="/goals" element={<Goals />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/training" element={<Training />} />
             <Route path="/health" element={<Health />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/finance" element={<Finance />} /> {/* 👈 nouvelle route */}
+            <Route path="/finance" element={<Finance />} /> {/* nouvelle page */}
           </Routes>
         </main>
       </div>
