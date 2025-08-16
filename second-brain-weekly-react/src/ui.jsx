@@ -15,15 +15,14 @@ function useDarkMode(){
 }
 
 const tiles = [
-  { id:'habits', icon: <CheckSquare className='icon-tile' />, title:'Mes habitudes', subtitle:'& ma to‑do list' },
-  { id:'goals', icon: <Target className='icon-tile' />, title:'Mes objectifs', subtitle:'& mes notes' },
-  { id:'calendar', icon: <CalendarDays className='icon-tile' />, title:'Calendrier', subtitle:'plan de la semaine' },
-  { id:'reading', icon: <BookOpen className='icon-tile' />, title:'Mes lectures', subtitle:'résumés & idées' },
-  { id:'study', icon: <NotebookPen className='icon-tile' />, title:'Mes études', subtitle:'pistes et suivis' },
-  { id:'training', icon: <Dumbbell className='icon-tile' />, title:'Entraînement', subtitle:'sport & progrès' },
-  { id:'health', icon: <Apple className='icon-tile' />, title:'Santé', subtitle:'sommeil & routine' },
-  { id:'settings', icon: <Settings className='icon-tile' />, title:'Réglages', subtitle:'thème & presets' },
+  { id:'habits',   icon: <CheckSquare className='icon-tile' />,  title:'Mes habitudes',  subtitle:'& ma to-do list' },
+  { id:'goals',    icon: <Target className='icon-tile' />,       title:'Mes objectifs',  subtitle:'& mes notes' },
+  { id:'calendar', icon: <CalendarDays className='icon-tile' />, title:'Calendrier',     subtitle:'plan de la semaine' },
+  { id:'training', icon: <Dumbbell className='icon-tile' />,     title:'Entraînement',   subtitle:'sport & progrès' },
+  { id:'health',   icon: <Apple className='icon-tile' />,        title:'Santé',          subtitle:'sommeil & routine' },
+  { id:'settings', icon: <Settings className='icon-tile' />,     title:'Réglages',       subtitle:'thème & presets' },
 ]
+
 
 function Tile({icon, title, subtitle}){
   return (
