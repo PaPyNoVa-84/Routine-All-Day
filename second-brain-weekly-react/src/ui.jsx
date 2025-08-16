@@ -82,7 +82,6 @@ function Home() {
   icon={<Target className="icon-tile" />}
   title="To-do-list"
   subtitle="& mes notes"
-/>
 
         />
         <Tile
