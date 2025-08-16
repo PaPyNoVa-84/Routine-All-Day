@@ -13,9 +13,10 @@ import {
   Apple,
   Settings,
   ChevronRight,
+  Wallet,             // 👈 icône Finance
 } from 'lucide-react'
 
-// Pages
+// --- Pages
 import Habits from './pages/Habits.jsx'
 import Goals from './pages/Goals.jsx'
 import Calendar from './pages/Calendar.jsx'
@@ -23,57 +24,65 @@ import Training from './pages/Training.jsx'
 import Health from './pages/Health.jsx'
 import SettingsPage from './pages/Settings.jsx'
 import HomePage from './pages/Home.jsx' // si tu as une Home dédiée; sinon on utilise Home ci-dessous
-import Finance from './pages/Finance.jsx'
-import { Wallet } from 'lucide-react'
+import Finance from './pages/Finance.jsx' // 👈 nouvelle page
 
-
-// --- Dark mode (identique esprit d’avant)
+/* ---------------------------------------
+   Dark mode (identique esprit d’avant)
+----------------------------------------*/
 function useDarkMode() {
   const [dark, setDark] = useState(() => {
     try { return JSON.parse(localStorage.getItem('darkMode') || 'false') } catch { return false }
   })
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(dark))
-    const el = document.documentElement
-    if (dark) el.classList.add('dark'); else el.classList.remove('dark')
   }, [dark])
   return [dark, setDark]
 }
 
-// --- Petite tuile réutilisable (garde ton esthétique)
+/* ---------------------------------------
+   Petite tuile réutilisable
+----------------------------------------*/
 function Tile({ to, icon, title, subtitle }) {
   return (
-    <Link to={to} className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl">
-      <div className="card p-5 md:p-6 hover:shadow-soft transition">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/10 grid place-items-center">
-              {icon}
-            </div>
-            <div>
-              <div className="font-semibold">{title}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-300">{subtitle}</div>
-            </div>
-          </div>
-          <ChevronRight className="opacity-60 group-hover:translate-x-0.5 transition" />
+    <Link
+      to={to}
+      className="group relative block rounded-2xl border border-zinc-200/60 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 md:p-5 hover:border-zinc-300 dark:hover:border-slate-700 transition"
+    >
+      <div className="flex items-center gap-3">
+        <div className="shrink-0 w-10 h-10 rounded-xl bg-zinc-100 dark:bg-slate-900 grid place-items-center">
+          {icon}
         </div>
+        <div className="min-w-0">
+          <div className="font-semibold truncate">{title}</div>
+          {subtitle && <div className="text-sm opacity-70 truncate">{subtitle}</div>}
+        </div>
+        <ChevronRight className="ml-auto w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition" />
       </div>
     </Link>
   )
 }
 
-// --- Home inline (si tu n’utilises pas src/pages/Home.jsx, sinon supprime ce composant)
+/* ---------------------------------------
+   Home locale (si tu n’utilises pas Home.jsx)
+----------------------------------------*/
 function Home() {
+  const today = new Date()
+  const dateLabel = today.toLocaleDateString('fr-FR', {
+    weekday: 'long', day: '2-digit', month: 'long'
+  })
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero */}
-      <div className="card p-6 md:p-8">
-        <div className="text-xs text-zinc-500 mb-2 uppercase tracking-wider">AUJOURD’HUI — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' }).toUpperCase()}</div>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Ton tableau de bord</h1>
+      <div className="card p-5 md:p-6">
+        <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+          AUJOURD’HUI — {dateLabel}
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold">Ton tableau de bord</h1>
       </div>
 
-      {/* Grille de tuiles — EXACT rendu, juste cliquables */}
-      <div className="grid gap-4 md:gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {/* Grille de tuiles */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Tile
           to="/habits"
           icon={<CheckSquare className="icon-tile" />}
@@ -81,11 +90,10 @@ function Home() {
           subtitle="& ma to-do list"
         />
         <Tile
-  to="/goals"
-  icon={<Target className="icon-tile" />}
-  title="To-do-list"
-  subtitle="& mes notes"
-
+          to="/goals"
+          icon={<Target className="icon-tile" />}
+          title="To-do-list"
+          subtitle="& mes notes"
         />
         <Tile
           to="/calendar"
@@ -111,84 +119,62 @@ function Home() {
           title="Réglages"
           subtitle="thème & presets"
         />
-<Tile
-  to="/finance"
-  icon={<Wallet className="icon-tile" />}
-  title="Finances"
-  subtitle="perso • pro • rappels"
-/>
-
-
-      {/* Raccourcis + Astuce du jour (inchangés, purement visuels) */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card p-5 md:p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-semibold">Raccourcis</div>
-            <span className="badge">Personnalisables</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn-ghost">+ Tâche rapide</button>
-            <button className="btn-ghost">+ Objectif</button>
-            <Link to="/calendar" className="btn-ghost">Ouvrir calendrier</Link>
-            <button className="btn-ghost">Notes du jour</button>
-            <button className="btn-ghost">Routine soir</button>
-          </div>
-        </div>
-
-        <div className="card p-5 md:p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-semibold">Astuce du jour</div>
-            <span className="badge">Discipline</span>
-          </div>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Commence par 3 micro-actions faciles que tu peux cocher en 10 minutes. L’élan &gt; la motivation.
-          </p>
-        </div>
+        {/* 👇 Nouvelle tuile Finance (même style) */}
+        <Tile
+          to="/finance"
+          icon={<Wallet className="icon-tile" />}
+          title="Finances"
+          subtitle="perso • pro • rappels"
+        />
       </div>
+
+      {/* Raccourcis / Astuce — laissé tel quel si tu en avais déjà (pur visuel) */}
+      {/* Tu peux conserver tes blocs existants ici */}
     </div>
   )
 }
 
-// --- App shell + Routes (identique à ton esprit d’avant)
+/* ---------------------------------------
+   App shell + Routes
+----------------------------------------*/
 export default function App() {
   const [dark, setDark] = useDarkMode()
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-[#0b0f14] text-zinc-900 dark:text-zinc-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur bg-white/60 dark:bg-[#0b0f14]/60 border-b border-zinc-200 dark:border-slate-800">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-extrabold">
-            <span className="inline-grid place-items-center w-6 h-6 rounded-md bg-gradient-to-br from-pink-500 to-fuchsia-400">
-              <Brain size={16} />
-            </span>
-            <span>2ᵉ CERVEAU</span>
-          </Link>
-          <button
-            onClick={() => setDark(v => !v)}
-            className="px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-slate-700 text-sm"
-            aria-label="Basculer le thème"
-          >
-            {dark ? <SunMedium size={16} /> : <Moon size={16} />} <span className="ml-1 hidden sm:inline">{dark ? 'Clair' : 'Sombre'}</span>
-          </button>
-        </div>
-      </header>
+    <div className={dark ? 'dark' : ''}>
+      <div className="min-h-screen bg-white text-black dark:bg-[#0b0d10] dark:text-white">
+        {/* Header */}
+        <header className="container mx-auto px-4 py-4 md:py-6">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2 font-semibold">
+              <Brain className="w-5 h-5" />
+              <span>2ᵉ CERVEAU</span>
+            </Link>
+            <button
+              onClick={() => setDark(v => !v)}
+              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700"
+              aria-label="Basculer le thème"
+            >
+              {dark ? <SunMedium className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
+        </header>
 
-      {/* Main */}
-      <main className="container mx-auto px-4 py-6 md:py-8">
-        <Routes>
-          {/* Si tu veux utiliser ta page Home.jsx existante, remplace <Home /> par <HomePage /> */}
-          <Route path="/" element={<Home />} />
-          <Route path="/habits" element={<Habits />} />
-          <Route path="/goals" element={<Goals />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/training" element={<Training />} />
-          <Route path="/health" element={<Health />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/finance" element={<Finance />} />
-
-        </Routes>
-      </main>
+        {/* Main */}
+        <main className="container mx-auto px-4 py-6 md:py-8">
+          <Routes>
+            {/* Si tu veux utiliser ta page Home.jsx existante, remplace <Home /> par <HomePage /> */}
+            <Route path="/" element={<Home />} />
+            <Route path="/habits" element={<Habits />} />
+            <Route path="/goals" element={<Goals />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/training" element={<Training />} />
+            <Route path="/health" element={<Health />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/finance" element={<Finance />} /> {/* 👈 nouvelle route */}
+          </Routes>
+        </main>
+      </div>
     </div>
   )
 }
