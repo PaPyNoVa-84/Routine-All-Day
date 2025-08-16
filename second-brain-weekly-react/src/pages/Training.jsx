@@ -1,8 +1,35 @@
-import { useState, useEffect, useRef } from "react";
-import { format, startOfWeek, endOfWeek, isSameDay } from "date-fns";
-import { fr } from "date-fns/locale";
+// src/pages/Training.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-const exos = [
+/* =======================
+   Utils dates — sans date-fns
+   ======================= */
+// YYYY-MM-DD
+const pad2 = (n) => String(n).padStart(2, "0");
+const toISO = (d) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+// lundi de la semaine courante
+const startOfISOWeek = (date = new Date()) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  // 0=dimanche → on veut lundi=0
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day);
+  return d;
+};
+// dimanche de la même semaine
+const endOfISOWeek = (date = new Date()) => {
+  const start = startOfISOWeek(date);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return end;
+};
+
+/* =======================
+   Données d’autocomplétion
+   ======================= */
+const EXOS = [
   "Pompes",
   "Squats",
   "Fentes",
@@ -12,10 +39,12 @@ const exos = [
   "Mountain climbers",
   "Jumping jacks",
   "Tractions",
-  "Dips"
+  "Dips",
 ];
 
-// ---- Champ exercice avec autocomplétion ----
+/* =======================
+   Champ Exercice (autocomplete)
+   ======================= */
 function ExoField({ value, onChange, placeholder = "Exercice" }) {
   const [open, setOpen] = useState(false);
   const [v, setV] = useState(value || "");
@@ -23,7 +52,6 @@ function ExoField({ value, onChange, placeholder = "Exercice" }) {
 
   useEffect(() => setV(value || ""), [value]);
 
-  // fermer au clic dehors
   useEffect(() => {
     const onDoc = (e) => {
       if (!wrapRef.current) return;
@@ -33,8 +61,8 @@ function ExoField({ value, onChange, placeholder = "Exercice" }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const list = exos.filter((exo) =>
-    exo.toLowerCase().includes(v.trim().toLowerCase())
+  const list = EXOS.filter((exo) =>
+    exo.toLowerCase().includes((v || "").trim().toLowerCase())
   );
 
   const pick = (name) => {
@@ -59,6 +87,7 @@ function ExoField({ value, onChange, placeholder = "Exercice" }) {
         placeholder={placeholder}
         autoComplete="off"
       />
+
       {open && (
         <div className="absolute left-0 top-[calc(100%+4px)] w-full z-50 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg max-h-60 overflow-auto text-black dark:text-white">
           {list.length === 0 ? (
@@ -81,57 +110,81 @@ function ExoField({ value, onChange, placeholder = "Exercice" }) {
   );
 }
 
-// ---- Page Training ----
+/* =======================
+   Page Training
+   ======================= */
 export default function Training() {
-  const [tab, setTab] = useState("natation");
-  const [rows, setRows] = useState([{ id: Date.now(), exo: "", reps: "", sets: "", time: "" }]);
+  const [tab, setTab] = useState("natation"); // "natation" | "maison"
+
+  // Maison — lignes d’exos
+  const [rows, setRows] = useState([
+    { id: Date.now(), exo: "", sets: "", reps: "", time: "" },
+  ]);
+  const addRow = () =>
+    setRows((r) => [...r, { id: Date.now() + Math.random(), exo: "", sets: "", reps: "", time: "" }]);
+  const delRow = (id) => setRows((r) => r.filter((x) => x.id !== id));
+  const updateRow = (id, field, val) =>
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, [field]: val } : x)));
+
   const [note, setNote] = useState("");
   const [totalMin, setTotalMin] = useState("");
-  const [totalSec, setTotalSec] = useState(0);
+  const totalSec = useMemo(
+    () => rows.reduce((acc, r) => acc + (parseInt(r.time) || 0), 0),
+    [rows]
+  );
 
-  const addRow = () => setRows([...rows, { id: Date.now(), exo: "", reps: "", sets: "", time: "" }]);
-  const delRow = (id) => setRows(rows.filter(r => r.id !== id));
-
-  const updateRow = (id, field, value) => {
-    setRows(rows.map(r => r.id === id ? { ...r, [field]: value } : r));
-  };
-
-  useEffect(() => {
-    const sec = rows.reduce((acc, r) => acc + (parseInt(r.time) || 0), 0);
-    setTotalSec(sec);
-  }, [rows]);
+  // Badge semaine — ISO
+  const weekFrom = startOfISOWeek();
+  const weekTo = endOfISOWeek();
+  const badge = `${toISO(weekFrom)} — ${toISO(weekTo)}`;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="card">
-        <h2 className="text-lg font-semibold">Training</h2>
-        <div className="flex gap-2 mt-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider">Training</div>
+            <h2 className="text-xl md:text-2xl font-bold">Natation & maison</h2>
+          </div>
+          <span className="badge">{badge}</span>
+        </div>
+
+        {/* Onglets */}
+        <div className="mt-4 flex gap-2">
           <button
-            onClick={() => setTab("natation")}
             className={`px-3 py-1 rounded ${tab === "natation" ? "bg-zinc-200 dark:bg-slate-800" : ""}`}
+            onClick={() => setTab("natation")}
           >
             Natation
           </button>
           <button
-            onClick={() => setTab("maison")}
             className={`px-3 py-1 rounded ${tab === "maison" ? "bg-zinc-200 dark:bg-slate-800" : ""}`}
+            onClick={() => setTab("maison")}
           >
             Maison
           </button>
         </div>
       </div>
 
-      {/* ----- Maison ----- */}
+      {/* ========== Onglet Maison ========== */}
       {tab === "maison" && (
         <div className="card space-y-4">
-          <h3 className="font-semibold">Séance du jour — Maison</h3>
+          <div className="text-sm font-semibold">
+            Séance du jour — <span className="opacity-80">Maison</span>
+          </div>
 
+          {/* Lignes d’exercices */}
           {rows.map((r) => (
-            <div key={r.id} className="flex gap-2 items-center">
-              <ExoField value={r.exo} onChange={(v) => updateRow(r.id, "exo", v)} />
+            <div key={r.id} className="flex items-center gap-2">
+              <ExoField
+                value={r.exo}
+                onChange={(v) => updateRow(r.id, "exo", v)}
+                placeholder="Exercice"
+              />
               <input
                 type="number"
-                className="px-3 py-2 rounded-lg border w-20
+                className="px-3 py-2 rounded-lg border w-24
                            bg-white dark:bg-slate-900
                            text-black dark:text-white
                            placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
@@ -141,7 +194,7 @@ export default function Training() {
               />
               <input
                 type="number"
-                className="px-3 py-2 rounded-lg border w-20
+                className="px-3 py-2 rounded-lg border w-24
                            bg-white dark:bg-slate-900
                            text-black dark:text-white
                            placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
@@ -151,7 +204,7 @@ export default function Training() {
               />
               <input
                 type="number"
-                className="px-3 py-2 rounded-lg border w-24
+                className="px-3 py-2 rounded-lg border w-28
                            bg-white dark:bg-slate-900
                            text-black dark:text-white
                            placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
@@ -159,7 +212,12 @@ export default function Training() {
                 value={r.time}
                 onChange={(e) => updateRow(r.id, "time", e.target.value)}
               />
-              <button onClick={() => delRow(r.id)} className="px-2 py-1 rounded-lg bg-zinc-100 dark:bg-slate-900">Suppr.</button>
+              <button
+                className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-slate-900"
+                onClick={() => delRow(r.id)}
+              >
+                Suppr.
+              </button>
             </div>
           ))}
 
@@ -167,7 +225,8 @@ export default function Training() {
             + Ajouter une ligne
           </button>
 
-          <div className="flex gap-2 items-center">
+          {/* Totaux & commentaire – mêmes champs/visuels */}
+          <div className="grid md:grid-cols-2 gap-2">
             <input
               type="number"
               className="px-3 py-2 rounded-lg border w-full
@@ -178,9 +237,11 @@ export default function Training() {
               value={totalMin}
               onChange={(e) => setTotalMin(e.target.value)}
             />
-            <div className="px-3 py-2 rounded-lg border w-32
-                            bg-white dark:bg-slate-900
-                            text-black dark:text-white">
+            <div
+              className="px-3 py-2 rounded-lg border w-full
+                         bg-white dark:bg-slate-900
+                         text-black dark:text-white"
+            >
               {totalSec}
             </div>
           </div>
@@ -190,25 +251,38 @@ export default function Training() {
                        bg-white dark:bg-slate-900
                        text-black dark:text-white
                        placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
-            placeholder="Ton commentaire…"
+            placeholder="Note (optionnel) — ressenti, difficulté, etc."
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+
+          {/* Boutons (visuels seulement) */}
+          <div className="flex gap-2 justify-end">
+            <button className="px-4 py-2 rounded-lg bg-blue-600 text-white">
+              Enregistrer la séance
+            </button>
+            <button className="px-4 py-2 rounded-lg bg-zinc-100 dark:bg-slate-900">
+              Réinitialiser
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ----- Natation ----- */}
+      {/* ========== Onglet Natation ========== */}
       {tab === "natation" && (
         <div className="card space-y-4">
-          <h3 className="font-semibold">Séance du jour — Natation</h3>
+          <div className="text-sm font-semibold">
+            Séance du jour — <span className="opacity-80">Natation</span>
+          </div>
 
+          {/* Ici, on garde exactement la même interface d’inputs simples */}
           <input
             type="number"
             className="px-3 py-2 rounded-lg border w-full
                        bg-white dark:bg-slate-900
                        text-black dark:text-white
                        placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
-            placeholder="Nombre de longueurs crawl"
+            placeholder="Longueurs — crawl"
           />
           <input
             type="number"
@@ -216,7 +290,7 @@ export default function Training() {
                        bg-white dark:bg-slate-900
                        text-black dark:text-white
                        placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
-            placeholder="Nombre de longueurs dos"
+            placeholder="Longueurs — dos crawlé"
           />
           <input
             type="number"
@@ -224,8 +298,17 @@ export default function Training() {
                        bg-white dark:bg-slate-900
                        text-black dark:text-white
                        placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
-            placeholder="Temps total (minutes)"
+            placeholder="Temps total dans l’eau (minutes)"
           />
+
+          <div className="flex gap-2 justify-end">
+            <button className="px-4 py-2 rounded-lg bg-blue-600 text-white">
+              Enregistrer la séance
+            </button>
+            <button className="px-4 py-2 rounded-lg bg-zinc-100 dark:bg-slate-900">
+              Réinitialiser
+            </button>
+          </div>
         </div>
       )}
     </div>
