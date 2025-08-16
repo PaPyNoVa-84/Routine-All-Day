@@ -15,12 +15,10 @@ function Tile({ to, icon, title, subtitle }) {
   return (
     <Link
       to={to}
-      className="group relative block rounded-2xl border border-zinc-200/60 dark:border-slate-800 
-                 bg-zinc-50 dark:bg-slate-900 p-4 md:p-5 hover:border-zinc-300 
-                 dark:hover:border-slate-700 transition"
+      className="card p-4 md:p-5 hover:border-zinc-300 dark:hover:border-slate-700 transition"
     >
       <div className="flex items-center gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-xl bg-zinc-100 dark:bg-slate-800 grid place-items-center">
+        <div className="shrink-0 w-10 h-10 rounded-xl bg-zinc-100 dark:bg-slate-900 grid place-items-center">
           {icon}
         </div>
         <div className="min-w-0">
@@ -36,7 +34,9 @@ function Tile({ to, icon, title, subtitle }) {
 export default function Home() {
   const today = new Date()
   const dateLabel = today.toLocaleDateString('fr-FR', {
-    weekday: 'long', day: '2-digit', month: 'long'
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
   })
 
   return (
@@ -49,7 +49,7 @@ export default function Home() {
         <h1 className="text-2xl md:text-3xl font-bold">Ton tableau de bord</h1>
       </div>
 
-      {/* Grille des modules */}
+      {/* Grille des modules (même fond que le bandeau grâce à `card`) */}
       <div className="grid gap-4 md:grid-cols-2">
         <Tile
           to="/habits"
