@@ -23,6 +23,7 @@ import Training from './pages/Training.jsx'
 import Health from './pages/Health.jsx'
 import SettingsPage from './pages/Settings.jsx'
 import HomePage from './pages/Home.jsx' // si tu as une Home dédiée; sinon on utilise Home ci-dessous
+import Finance from './pages/Finance.jsx'
 
 // --- Dark mode (identique esprit d’avant)
 function useDarkMode() {
@@ -108,6 +109,11 @@ function Home() {
           title="Réglages"
           subtitle="thème & presets"
         />
+<Tile
+  to="/finance"
+  icon={<Wallet className="icon-tile" />}
+  title="Finances"
+  subtitle="perso • pro • rappels"
       </div>
 
       {/* Raccourcis + Astuce du jour (inchangés, purement visuels) */}
