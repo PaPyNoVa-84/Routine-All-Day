@@ -15,10 +15,12 @@ function Tile({ to, icon, title, subtitle }) {
   return (
     <Link
       to={to}
-      className="group relative block rounded-2xl border border-zinc-200/60 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 md:p-5 hover:border-zinc-300 dark:hover:border-slate-700 transition"
+      className="group relative block rounded-2xl border border-zinc-200/60 dark:border-slate-800 
+                 bg-zinc-50 dark:bg-slate-900 p-4 md:p-5 hover:border-zinc-300 
+                 dark:hover:border-slate-700 transition"
     >
       <div className="flex items-center gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-xl bg-zinc-100 dark:bg-slate-900 grid place-items-center">
+        <div className="shrink-0 w-10 h-10 rounded-xl bg-zinc-100 dark:bg-slate-800 grid place-items-center">
           {icon}
         </div>
         <div className="min-w-0">
@@ -91,32 +93,6 @@ export default function Home() {
           title="Finances"
           subtitle="perso • pro • rappels"
         />
-      </div>
-
-      {/* Raccourcis (visuel simple, tu peux lier où tu veux) */}
-      <div className="card p-5 md:p-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="font-semibold">Raccourcis</div>
-          <span className="badge">Personnalisables</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/goals" className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-800">+ Tâche rapide</Link>
-          <Link to="/goals" className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-800">+ Objectif</Link>
-          <Link to="/calendar" className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-800">Ouvrir calendrier</Link>
-          <Link to="/goals" className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-800">Notes du jour</Link>
-          <Link to="/habits" className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-800">Routine soir</Link>
-        </div>
-      </div>
-
-      {/* Astuce du jour (visuel) */}
-      <div className="card p-5 md:p-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="font-semibold">Astuce du jour</div>
-          <span className="badge">Discipline</span>
-        </div>
-        <div className="text-sm">
-          Commence par 3 micro-actions faciles que tu peux cocher en 10 minutes. L’élan → la motivation.
-        </div>
       </div>
     </div>
   )
