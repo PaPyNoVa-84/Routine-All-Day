@@ -78,10 +78,12 @@ function Home() {
           subtitle="& ma to-do list"
         />
         <Tile
-          to="/goals"
-          icon={<Target className="icon-tile" />}
-          title="Mes objectifs"
-          subtitle="& mes notes"
+  to="/goals"
+  icon={<Target className="icon-tile" />}
+  title="To-do-list"
+  subtitle="& mes notes"
+/>
+
         />
         <Tile
           to="/calendar"
