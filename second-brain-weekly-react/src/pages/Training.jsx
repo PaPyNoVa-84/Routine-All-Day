@@ -1,9 +1,7 @@
 // src/pages/Training.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 
-/* =========================================================
-   Utils: dates + localStorage
-   ======================================================= */
+/* =============== Utils dates + storage =============== */
 const pad = (n) => String(n).padStart(2, "0");
 const toISO = (d = new Date()) => {
   const t = new Date(d);
@@ -13,15 +11,15 @@ const toISO = (d = new Date()) => {
 const mondayISO = (d = new Date()) => {
   const t = new Date(d);
   t.setHours(0, 0, 0, 0);
-  const w = (t.getDay() + 6) % 7; // 0..6 (Lundi=0)
+  const w = (t.getDay() + 6) % 7; // Lundi=0
   t.setDate(t.getDate() - w);
   return t.toISOString().slice(0, 10);
 };
 const sundayISO = (d = new Date()) => {
-  const monday = new Date(mondayISO(d));
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return sunday.toISOString().slice(0, 10);
+  const m = new Date(mondayISO(d));
+  const s = new Date(m);
+  s.setDate(m.getDate() + 6);
+  return s.toISOString().slice(0, 10);
 };
 const fmtFR = (iso) =>
   new Date(iso).toLocaleDateString("fr-FR", {
@@ -40,31 +38,103 @@ const load = (k, fb) => {
 };
 const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
-/* =========================================================
-   Storage keys (par jour)
-   ======================================================= */
+/* =============== Keys par jour =============== */
 const swimKey = (iso) => `training:swim:${iso}`;
 const homeKey = (iso) => `training:home:${iso}`;
 
-/* =========================================================
-   Suggestions exercices (Maison)
-   ======================================================= */
+/* =============== Propositions exercices (Maison) =============== */
 const EXOS = [
-  "Pompes", "Squats", "Fentes", "Tractions", "Dips",
-  "Gainage (planche)", "Gainage latéral", "Crunchs",
-  "Mountain climbers", "Burpees", "Jumping jacks",
-  "Soulevé de hanches", "Abdos ciseaux", "Superman"
+  "Pompes",
+  "Squats",
+  "Fentes",
+  "Tractions",
+  "Dips",
+  "Gainage (planche)",
+  "Gainage latéral",
+  "Crunchs",
+  "Mountain climbers",
+  "Burpees",
+  "Jumping jacks",
+  "Soulevé de hanches",
+  "Abdos ciseaux",
+  "Superman",
 ];
 
 /* =========================================================
-   Composant NATATION
-   - longueurs par nage + temps total
+   Combobox “Exercice” (garde l’input, ajoute une liste flottante)
+   ======================================================= */
+function ExoField({ value, onChange, placeholder = "Exercice" }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState(value || "");
+  const wrapRef = useRef(null);
+
+  useEffect(() => setQ(value || ""), [value]);
+
+  // ferme au clic dehors
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const list = EXOS.filter((name) =>
+    name.toLowerCase().includes(q.trim().toLowerCase())
+  );
+
+  const pick = (name) => {
+    onChange(name);
+    setQ(name);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative w-full" ref={wrapRef}>
+      <input
+        className="px-3 py-2 rounded-lg border w-full"
+        value={q}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => {
+          setQ(e.target.value);
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+4px)] w-full z-50 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg max-h-60 overflow-auto">
+          {list.length === 0 ? (
+            <div className="px-3 py-2 text-sm opacity-60">Aucune suggestion</div>
+          ) : (
+            list.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => pick(name)}
+                className="block w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-slate-800"
+              >
+                {name}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   Onglet NATATION
    ======================================================= */
 function SwimTab({ iso, onSaved }) {
-  const [crawl, setCrawl] = useState(() => load(swimKey(iso), {}).crawl ?? 0);
-  const [back, setBack] = useState(() => load(swimKey(iso), {}).back ?? 0);
-  const [sec, setSec] = useState(() => load(swimKey(iso), {}).sec ?? 0);
-  const [note, setNote] = useState(() => load(swimKey(iso), {}).note ?? "");
+  const init = load(swimKey(iso), {});
+  const [crawl, setCrawl] = useState(init.crawl ?? 0);
+  const [back, setBack] = useState(init.back ?? 0);
+  const [sec, setSec] = useState(init.sec ?? 0);
+  const [note, setNote] = useState(init.note ?? "");
 
   const reset = () => {
     setCrawl(0);
@@ -74,8 +144,12 @@ function SwimTab({ iso, onSaved }) {
   };
 
   const saveDay = () => {
-    const data = { crawl: Number(crawl) || 0, back: Number(back) || 0, sec: Number(sec) || 0, note };
-    save(swimKey(iso), data);
+    save(swimKey(iso), {
+      crawl: Number(crawl) || 0,
+      back: Number(back) || 0,
+      sec: Number(sec) || 0,
+      note,
+    });
     onSaved?.();
   };
 
@@ -96,8 +170,8 @@ function SwimTab({ iso, onSaved }) {
             type="number"
             min="0"
             className="px-3 py-2 rounded-lg border w-full"
-            value={crawl}
-            onChange={(e) => setCrawl(e.target.value)}
+            value={back}
+            onChange={(e) => setBack(e.target.value)}
             placeholder="0"
           />
         </div>
@@ -107,8 +181,8 @@ function SwimTab({ iso, onSaved }) {
             type="number"
             min="0"
             className="px-3 py-2 rounded-lg border w-full"
-            value={back}
-            onChange={(e) => setBack(e.target.value)}
+            value={crawl}
+            onChange={(e) => setCrawl(e.target.value)}
             placeholder="0"
           />
         </div>
@@ -153,9 +227,7 @@ function SwimTab({ iso, onSaved }) {
 }
 
 /* =========================================================
-   Composant MAISON
-   - séries / reps / durée par exercice
-   - EXERCICE = combobox (input + datalist) ✅
+   Onglet MAISON
    ======================================================= */
 function HomeTab({ iso, onSaved }) {
   const day = load(homeKey(iso), { rows: [], totalMin: 0, note: "" });
@@ -208,28 +280,18 @@ function HomeTab({ iso, onSaved }) {
         </div>
       </div>
 
-      {/* Lignes d'exercices */}
+      {/* Lignes */}
       <div className="space-y-2">
         {rows.map((r) => (
           <div
             key={r.id}
             className="grid md:grid-cols-[minmax(220px,1fr)_110px_110px_110px_90px] gap-2 items-center"
           >
-            {/* Exercice (COMBOBOX) */}
-            <div className="relative w-full">
-              <input
-                list={`exos-${r.id}`}
-                className="px-3 py-2 rounded-lg border w-full"
-                value={r.exo}
-                onChange={(e) => setRow(r.id, { exo: e.target.value })}
-                placeholder="Exercice"
-              />
-              <datalist id={`exos-${r.id}`}>
-                {EXOS.map((name) => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
-            </div>
+            {/* Exercice (combobox custom) */}
+            <ExoField
+              value={r.exo}
+              onChange={(val) => setRow(r.id, { exo: val })}
+            />
 
             {/* Séries */}
             <input
@@ -334,14 +396,12 @@ function HomeTab({ iso, onSaved }) {
 }
 
 /* =========================================================
-   Historique + résumé semaine (affiche ce qui est stocké
-   entre lundi et dimanche inclus)
+   Historique semaine
    ======================================================= */
 function WeeklyHistory() {
   const monday = mondayISO();
   const sunday = sundayISO();
 
-  // collecte natation
   let swim = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -351,7 +411,6 @@ function WeeklyHistory() {
     if (v) swim.push({ iso, ...v });
   }
 
-  // collecte maison
   let home = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -361,14 +420,14 @@ function WeeklyHistory() {
     if (v) home.push({ iso, ...v });
   }
 
-  const sum = (arr, pick) => arr.reduce((s, x) => s + (Number(x[pick]) || 0), 0);
-
+  const sum = (arr, prop) => arr.reduce((s, x) => s + (Number(x[prop]) || 0), 0);
   const crawlTotal = sum(swim, "crawl");
   const backTotal = sum(swim, "back");
   const swimSecTotal = sum(swim, "sec");
-
-  const homeSecTotal =
-    home.reduce((s, x) => s + (x.rows || []).reduce((a, r) => a + (Number(r.sec) || 0), 0), 0);
+  const homeSecTotal = home.reduce(
+    (s, x) => s + (x.rows || []).reduce((a, r) => a + (Number(r.sec) || 0), 0),
+    0
+  );
 
   return (
     <div className="card p-5 md:p-6 space-y-6">
@@ -379,7 +438,7 @@ function WeeklyHistory() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Bloc natation */}
+        {/* Natation */}
         <div>
           <div className="font-semibold mb-2">Natation</div>
           {swim.length === 0 ? (
@@ -398,12 +457,12 @@ function WeeklyHistory() {
             </div>
           )}
           <div className="mt-3 text-sm opacity-80">
-            <span className="font-semibold">Total semaine:</span>{" "}
+            <span className="font-semibold">Total semaine :</span>{" "}
             Dos crawlé {backTotal} • Crawl {crawlTotal} • {swimSecTotal} sec
           </div>
         </div>
 
-        {/* Bloc maison */}
+        {/* Maison */}
         <div>
           <div className="font-semibold mb-2">Maison</div>
           {home.length === 0 ? (
@@ -411,15 +470,18 @@ function WeeklyHistory() {
           ) : (
             <div className="space-y-2">
               {home.map((h) => {
-                const rowTxt = (h.rows || [])
+                const txt = (h.rows || [])
                   .map((r) => `${r.exo || "?"} — ${r.sets}x${r.reps} (${r.sec}s)`)
                   .join(" • ");
-                const secCum = (h.rows || []).reduce((s, r) => s + (Number(r.sec) || 0), 0);
+                const secCum = (h.rows || []).reduce(
+                  (s, r) => s + (Number(r.sec) || 0),
+                  0
+                );
                 return (
                   <div key={h.iso} className="rounded-lg border p-3">
                     <div className="text-sm font-medium">{fmtFR(h.iso)}</div>
-                    <div className="text-xs opacity-75">{rowTxt || "Aucun détail"}</div>
-                    <div className="text-xs opacity-75">Durée cumulée: {secCum} sec</div>
+                    <div className="text-xs opacity-75">{txt || "Aucun détail"}</div>
+                    <div className="text-xs opacity-75">Durée cumulée : {secCum} sec</div>
                     {h.note && <div className="text-xs mt-1 opacity-80">“{h.note}”</div>}
                   </div>
                 );
@@ -427,7 +489,7 @@ function WeeklyHistory() {
             </div>
           )}
           <div className="mt-3 text-sm opacity-80">
-            <span className="font-semibold">Total semaine:</span> {homeSecTotal} sec cumulés
+            <span className="font-semibold">Total semaine :</span> {homeSecTotal} sec cumulés
           </div>
         </div>
       </div>
@@ -436,15 +498,13 @@ function WeeklyHistory() {
 }
 
 /* =========================================================
-   Page principale TRAINING (tabs + entête)
+   Page TRAINING
    ======================================================= */
 export default function Training() {
   const [tab, setTab] = useState("swim"); // 'swim' | 'home'
   const iso = toISO();
   const monday = mondayISO();
   const sunday = sundayISO();
-
-  // déclenche un refresh doux des historiques
   const [, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
 
@@ -454,7 +514,9 @@ export default function Training() {
       <div className="card p-5 md:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">TRAINING</div>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+              TRAINING
+            </div>
             <h2 className="text-xl md:text-2xl font-bold">Natation & maison</h2>
           </div>
           <span className="badge">
@@ -483,11 +545,11 @@ export default function Training() {
         </button>
       </div>
 
-      {/* Contenu onglets */}
+      {/* Contenu */}
       {tab === "swim" && <SwimTab iso={iso} onSaved={refresh} />}
       {tab === "home" && <HomeTab iso={iso} onSaved={refresh} />}
 
-      {/* Historique semaine */}
+      {/* Historique */}
       <WeeklyHistory />
     </div>
   );
