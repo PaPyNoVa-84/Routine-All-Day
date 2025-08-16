@@ -1,9 +1,47 @@
-// src/pages/Habits.jsx
+// src/pages/Routine.jsx
 import React, { useMemo, useState } from 'react'
 
-// ------------------------------------------------------------------
-// 1) Données : ta semaine complète (exacte)
-// ------------------------------------------------------------------
+/**
+ * 🔒 Persistance
+ * - Routine "Général" : par jour (clé date ISO du jour)
+ * - Routine par JOUR de la semaine : par semaine → jour → id
+ */
+const GEN_KEY_PREFIX = 'rt:gen:'         // ex: rt:gen:2025-08-16
+const WEEK_KEY       = 'rt:weekChecks'    // ex: { "2025-08-11": { "Lundi": { id:true } } }
+
+const getGen = (iso) => JSON.parse(localStorage.getItem(GEN_KEY_PREFIX + iso) || '{}')
+const setGen = (iso, v) => localStorage.setItem(GEN_KEY_PREFIX + iso, JSON.stringify(v))
+
+const getWeek = () => JSON.parse(localStorage.getItem(WEEK_KEY) || '{}')
+const setWeek = (v) => localStorage.setItem(WEEK_KEY, JSON.stringify(v))
+
+// lundi de la semaine (YYYY-MM-DD)
+const startOfWeekISO = (d = new Date()) => {
+  const t = new Date(d); t.setHours(0,0,0,0)
+  const w = (t.getDay() + 6) % 7 // 0..6 (lun=0)
+  t.setDate(t.getDate() - w)
+  return t.toISOString().slice(0,10)
+}
+
+const daysFR = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche']
+
+/**
+ * 🧩 Routine Généraliste (checklist quotidienne)
+ * Tu peux ajuster ces items à ta guise.
+ */
+const generalRoutine = [
+  { id:'g1', text:"Hydratation (1,5L)" },
+  { id:'g2', text:"Étirements 10 min" },
+  { id:'g3', text:"Skincare" },
+  { id:'g4', text:"Marche 20 min / sport léger" },
+  { id:'g5', text:"Lecture/formation 20 min" },
+]
+
+/**
+ * 📅 Routine Hebdo (ton emploi du temps jour par jour)
+ * Copiée de ce que tu m’as donné pour rester autonome dans cette page.
+ * (Si tu veux, on pourra la lire depuis Habits.jsx pour éviter la duplication.)
+ */
 const defaultTemplate = {
   Lundi: [
     { id: 'lu1', time: '09:00', text: 'Réveil + hydratation' },
@@ -90,49 +128,39 @@ const defaultTemplate = {
   ],
 }
 
-// Ordre FR
-const daysFR = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche']
-
-// ------------------------------------------------------------------
-// 2) Persistance des coches (semaine -> jour -> id)
-// ------------------------------------------------------------------
-const CHECK_KEY = 'hb:weekChecks'
-
-const getChecks = () => JSON.parse(localStorage.getItem(CHECK_KEY) || '{}')
-const setChecks = (v) => localStorage.setItem(CHECK_KEY, JSON.stringify(v))
-
-// clé = lundi de la semaine en ISO (YYYY-MM-DD)
-const startOfWeekISO = (d = new Date()) => {
-  const t = new Date(d); t.setHours(0,0,0,0)
-  const w = (t.getDay() + 6) % 7 // 0..6 (lun=0)
-  t.setDate(t.getDate() - w)
-  return t.toISOString().slice(0,10)
-}
-
-// ------------------------------------------------------------------
-// 3) Composant
-// ------------------------------------------------------------------
-export default function Habits() {
-  const [tab, setTab] = useState('today') // 'today' | 'template' | 'weekly'
-
-  // jour FR “aujourd’hui”
-  const dayToday = useMemo(() => {
+export default function Routine() {
+  const [tab, setTab] = useState('general') // 'general' | 'weekly'
+  const [currentDay, setCurrentDay] = useState(() => {
     const g = new Date().getDay() // 0..6 (dim=0)
     return daysFR[g === 0 ? 6 : g - 1] // map vers 0..6 (lun..dim)
-  }, [])
+  })
   const weekKey = startOfWeekISO()
+  const todayISO = useMemo(() => {
+    const t = new Date(); t.setHours(0,0,0,0)
+    return t.toISOString().slice(0,10)
+  }, [])
 
-  const isChecked = (day, id) => !!getChecks()?.[weekKey]?.[day]?.[id]
-  const toggleCheck = (day, id) => {
-    const all = getChecks()
-    all[weekKey] = all[weekKey] || {}
-    all[weekKey][day] = all[weekKey][day] || {}
-    all[weekKey][day][id] = !all[weekKey][day][id]
-    setChecks(all)
-    // petit trick: forcer un re-render léger
-    setTick(t => t + 1)
+  // --- Actions génériques (par jour calendrier)
+  const genChecked = (id) => !!getGen(todayISO)[id]
+  const genToggle  = (id) => {
+    const obj = getGen(todayISO)
+    obj[id] = !obj[id]
+    setGen(todayISO, obj)
+    setTick(t=>t+1)
   }
-  const [tick, setTick] = useState(0) // pour refresh après toggle
+
+  // --- Actions hebdo (par semaine → jour → id)
+  const dayChecked = (day, id) => !!getWeek()?.[weekKey]?.[day]?.[id]
+  const dayToggle  = (day, id) => {
+    const wk = getWeek()
+    wk[weekKey] = wk[weekKey] || {}
+    wk[weekKey][day] = wk[weekKey][day] || {}
+    wk[weekKey][day][id] = !wk[weekKey][day][id]
+    setWeek(wk)
+    setTick(t=>t+1)
+  }
+
+  const [tick, setTick] = useState(0) // force re-render minimal
 
   return (
     <div className="space-y-4">
@@ -140,91 +168,83 @@ export default function Habits() {
       <div className="card p-5 md:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">HABITUDES</div>
-            <h2 className="text-xl md:text-2xl font-bold">Ta routine & to-do</h2>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">ROUTINE</div>
+            <h2 className="text-xl md:text-2xl font-bold">Routine généraliste & hebdo</h2>
           </div>
           <span className="badge">Semaine du {weekKey}</span>
         </div>
       </div>
 
-      {/* Onglets */}
+      {/* Tabs */}
       <div className="flex gap-2 text-sm">
-        {[
-          {k:'today',    label:"Aujourd’hui"},
-          {k:'template', label:'Routine'},
-          {k:'weekly',   label:'Hebdo'}
-        ].map(b => (
-          <button
-            key={b.k}
-            onClick={()=>setTab(b.k)}
-            className={`px-3 py-2 rounded-lg border ${tab===b.k ? 'bg-black text-white dark:bg-white dark:text-black' : ''}`}
-          >
-            {b.label}
-          </button>
-        ))}
+        <button
+          onClick={()=>setTab('general')}
+          className={`px-3 py-2 rounded-lg border ${tab==='general' ? 'bg-black text-white dark:bg-white dark:text-black':''}`}
+        >
+          Général
+        </button>
+        <button
+          onClick={()=>setTab('weekly')}
+          className={`px-3 py-2 rounded-lg border ${tab==='weekly' ? 'bg-black text-white dark:bg-white dark:text-black':''}`}
+        >
+          Hebdo
+        </button>
       </div>
 
-      {/* Contenu des onglets */}
-      {tab === 'today' && (
+      {/* GENERAL — checklist du jour (indépendante des jours de la semaine) */}
+      {tab==='general' && (
         <div className="card p-5 md:p-6 space-y-2">
-          <div className="font-semibold mb-2">{dayToday}</div>
-          {(defaultTemplate[dayToday] || []).map(item => (
+          <div className="text-sm font-semibold opacity-80 mb-1">
+            Aujourd’hui — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' })}
+          </div>
+          {generalRoutine.map(item => (
             <label key={item.id} className="flex items-center gap-2 rounded-lg border border-zinc-200/50 dark:border-slate-700/60 px-3 py-2">
               <input
                 type="checkbox"
                 className="w-4 h-4"
-                checked={isChecked(dayToday, item.id)}
-                onChange={() => toggleCheck(dayToday, item.id)}
+                checked={genChecked(item.id)}
+                onChange={()=>genToggle(item.id)}
               />
-              <span className="text-sm">
-                <span className="opacity-60 mr-2">{item.time}</span>{item.text}
-              </span>
+              <span className="text-sm">{item.text}</span>
             </label>
           ))}
         </div>
       )}
 
-      {tab === 'template' && (
-        <div className="card p-5 md:p-6">
-          {/* Routine du jour sélectionné (lecture seule, on ne touche pas au style) */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {daysFR.map(day => (
-              <div key={day} className="space-y-2">
-                <div className="text-sm font-semibold opacity-80">{day}</div>
-                {(defaultTemplate[day] || []).map(item => (
-                  <div key={item.id} className="text-sm opacity-90">
-                    <span className="opacity-60 mr-2">{item.time}</span>{item.text}
-                  </div>
-                ))}
-              </div>
+      {/* HEBDO — un seul jour visible à la fois + nav jours */}
+      {tab==='weekly' && (
+        <div className="card p-5 md:p-6 space-y-4">
+          {/* Navigation jours */}
+          <div className="flex flex-wrap gap-2">
+            {daysFR.map(d => (
+              <button
+                key={d}
+                onClick={()=>setCurrentDay(d)}
+                className={`px-3 py-2 rounded-lg border ${currentDay===d ? 'bg-black text-white dark:bg-white dark:text-black':''}`}
+              >
+                {d}
+              </button>
             ))}
           </div>
-        </div>
-      )}
 
-      {tab === 'weekly' && (
-        <div className="card p-5 md:p-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {daysFR.map(day => (
-              <div key={day} className="space-y-2">
-                <div className="text-sm font-semibold opacity-80">{day}</div>
-                {(defaultTemplate[day] || []).map(item => (
-                  <label
-                    key={item.id}
-                    className="flex items-center gap-2 rounded-lg border border-zinc-200/50 dark:border-slate-700/60 px-3 py-2"
-                  >
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4"
-                      checked={isChecked(day, item.id)}
-                      onChange={() => toggleCheck(day, item.id)}
-                    />
-                    <span className="text-sm">
-                      <span className="opacity-60 mr-2">{item.time}</span>{item.text}
-                    </span>
-                  </label>
-                ))}
-              </div>
+          {/* Liste cochable du jour sélectionné */}
+          <div className="space-y-2">
+            <div className="text-sm font-semibold opacity-80">{currentDay}</div>
+            {(defaultTemplate[currentDay] || []).map(item => (
+              <label
+                key={item.id}
+                className="flex items-center gap-2 rounded-lg border border-zinc-200/50 dark:border-slate-700/60 px-3 py-2"
+              >
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={dayChecked(currentDay, item.id)}
+                  onChange={()=>dayToggle(currentDay, item.id)}
+                />
+                <span className="text-sm">
+                  <span className="opacity-60 mr-2">{item.time}</span>{item.text}
+                </span>
+              </label>
             ))}
           </div>
         </div>
