@@ -290,7 +290,20 @@ function HomeTab() {
                 onChange={(e)=>setRow(r.id,{ exo: e.target.value })}
               >
                 {exos.map(name => <option key={name} value={name}>{name}</option>)}
-              </select>
+              {/* Exercice (combobox) */}
+<div className="relative w-full">
+  <input
+    list={`exos-${r.id}`}
+    className="px-3 py-2 rounded-lg border w-full"
+    value={r.exo}
+    onChange={(e)=>setRow(r.id, { exo: e.target.value })}
+    placeholder="Exercice"
+  />
+  <datalist id={`exos-${r.id}`}>
+    {exos.map(name => <option key={name} value={name} />)}
+  </datalist>
+</div>
+
 
               <input type="number" min="0" className="px-3 py-2 rounded-lg border"
                      value={r.series} onChange={(e)=>setRow(r.id,{ series: Number(e.target.value) })} placeholder="Séries" />
