@@ -9,3 +9,12 @@ html.dark body { background: #0b0b0c; }
 .card { @apply bg-white rounded-3xl border border-zinc-200 shadow-soft transition hover:shadow-lg active:scale-[.99] dark:bg-zinc-900 dark:border-zinc-800; }
 .icon-tile { @apply h-6 w-6 md:h-7 md:w-7; }
 .badge { @apply text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300; }
+/* Évite le scroll horizontal + applique le fond noir partout */
+html, body, #root {
+  min-height: 100%;
+  background-color: #0b0d10; /* remplace par ton fond dark actuel */
+}
+body {
+  overflow-x: hidden;         /* empêche le débordement sur les côtés */
+  -webkit-tap-highlight-color: transparent;
+}
