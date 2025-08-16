@@ -1,5 +1,9 @@
 // src/pages/Health.jsx
 import React, { useEffect, useMemo, useState } from 'react'
+// --- hydratation: conversions
+const ML_PER_GLASS = 250; // 1 verre = 250 ml
+const toLiters = (ml) => (ml / 1000).toFixed(2);
+
 
 /* ========= Utils dates ========= */
 const pad = (n) => String(n).padStart(2, '0')
@@ -198,7 +202,10 @@ export default function HealthPage(){
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="font-semibold">Hydratation</div>
-                <span className="badge">{day.water.count}/{day.water.goal} verres</span>
+                <span className="badge">
+  {day.water.count}/{day.water.goal} verres · {toLiters(day.water.count * ML_PER_GLASS)} / {toLiters(day.water.goal * ML_PER_GLASS)} L
+</span>
+
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={()=>inc('water.count', -1)} className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700">-1</button>
