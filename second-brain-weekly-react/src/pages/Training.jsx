@@ -91,7 +91,11 @@ function ExoField({ value, onChange, placeholder = "Exercice" }) {
   };
 
   return (
-    <div className="relative w-full" ref={wrapRef}>
+    <div className="px-3 py-2 rounded-lg border w-full
+            bg-white dark:bg-slate-900
+            text-black dark:text-white
+            placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
+
       <input
         className="px-3 py-2 rounded-lg border w-full"
         value={q}
@@ -105,7 +109,8 @@ function ExoField({ value, onChange, placeholder = "Exercice" }) {
         autoComplete="off"
       />
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] w-full z-50 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg max-h-60 overflow-auto">
+        <div className="absolute left-0 top-[calc(100%+4px)] w-full z-50 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg max-h-60 overflow-auto text-black dark:text-white">
+
           {list.length === 0 ? (
             <div className="px-3 py-2 text-sm opacity-60">Aucune suggestion</div>
           ) : (
