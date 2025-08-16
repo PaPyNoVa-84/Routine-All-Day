@@ -8,6 +8,8 @@ const pad = (n) => String(n).padStart(2, '0')
 const toISO = (d=new Date()) => { const t=new Date(d); t.setHours(0,0,0,0); return t.toISOString().slice(0,10) }
 const monthKey = (d=new Date()) => `${d.getFullYear()}-${pad(d.getMonth()+1)}` // YYYY-MM
 const frMonthLabel = (d) => d.toLocaleDateString('fr-FR', { month:'long', year:'numeric' })
+const autoListKey = 'fin:auto:list'                      // liste globale des sorties auto (persistante)
+const autoCheckKey = (mk) => `fin:auto:check:${mk}`      // état coché/décoché par mois
 
 const expKey = (scope, mk) => `fin:${scope}:${mk}`                // array of expenses
 const budgetKey = (scope, mk) => `fin:budget:${scope}:${mk}`      // number
@@ -423,43 +425,151 @@ function RemindersSection({ mk, settings, setSettings }){
    AutoOutSection (Sortie auto)
 =========================== */
 function AutoOutSection({ mk }) {
-  const key = autoKey(mk)
-  const [state, setState] = useState(() => loadJSON(key, { enabled:false, note:'' }))
+  // Liste globale des sorties auto (pas liée au mois)
+  const [list, setList] = React.useState(() => loadJSON(autoListKey, [
+    // Exemples au premier chargement (tu peux les enlever si tu veux)
+    // { id: newId(), label: 'Loyer', amount: 650 },
+    // { id: newId(), label: 'Internet', amount: 30 },
+  ]));
 
-  // persistance + reset auto quand le mois change
-  useEffect(()=> { saveJSON(key, state) }, [state, key])
-  useEffect(()=> { setState(loadJSON(key, { enabled:false, note:'' })) }, [mk])
+  // État des coches pour le mois courant { [id]: true|false }
+  const [checks, setChecks] = React.useState(() => loadJSON(autoCheckKey(mk), {}));
+
+  // Formulaire ajout
+  const [form, setForm] = React.useState({ label: '', amount: '' });
+
+  // Édition inline
+  const [editId, setEditId] = React.useState(null);
+  const [editRow, setEditRow] = React.useState({ label: '', amount: '' });
+
+  // Persistance
+  React.useEffect(() => { saveJSON(autoListKey, list) }, [list]);
+  React.useEffect(() => { saveJSON(autoCheckKey(mk), checks) }, [checks, mk]);
+
+  // Reset auto des coches quand le mois change (on recharge l'état mensuel)
+  React.useEffect(() => {
+    setChecks(loadJSON(autoCheckKey(mk), {}));
+  }, [mk]);
+
+  const addItem = (e) => {
+    e.preventDefault();
+    const label = form.label.trim();
+    const amount = Number(form.amount);
+    if (!label || !amount) return;
+    setList(prev => [{ id: newId(), label, amount }, ...prev]);
+    setForm({ label: '', amount: '' });
+  };
+
+  const startEdit = (row) => {
+    setEditId(row.id);
+    setEditRow({ label: row.label, amount: String(row.amount) });
+  };
+
+  const saveEdit = () => {
+    const label = editRow.label.trim();
+    const amount = Number(editRow.amount);
+    if (!label || !amount) return;
+    setList(prev => prev.map(x => x.id === editId ? { ...x, label, amount } : x));
+    setEditId(null);
+  };
+
+  const delItem = (id) => {
+    // on supprime aussi l'état coché correspondant pour le mois courant
+    setList(prev => prev.filter(x => x.id !== id));
+    setChecks(prev => {
+      const n = { ...prev }; delete n[id]; return n;
+    });
+  };
+
+  const toggleCheck = (id) => setChecks(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const total = React.useMemo(
+    () => list.reduce((a, b) => a + (Number(b.amount) || 0), 0),
+    [list]
+  );
 
   return (
     <div className="card p-5 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <div className="font-semibold">Sortie automatique — {mk}</div>
-        <span className="badge">Se réinitialise le 1ᵉʳ</span>
+        <div className="font-semibold">Sorties automatiques — {mk}</div>
+        <span className="badge">Coches réinitialisées chaque mois</span>
       </div>
 
-      <label className="flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-slate-700 px-3 py-2">
+      {/* Ajout */}
+      <form onSubmit={addItem} className="grid md:grid-cols-[1fr,140px,120px] gap-2">
         <input
-          type="checkbox"
-          className="w-4 h-4"
-          checked={!!state.enabled}
-          onChange={(e)=> setState(s=>({ ...s, enabled: e.target.checked }))}
+          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+          placeholder="Intitulé (ex: Loyer, Internet, Spotify...)"
+          value={form.label}
+          onChange={(e) => setForm(f => ({ ...f, label: e.target.value }))}
         />
-        <span className="text-sm">Activer la sortie automatique ce mois</span>
-      </label>
+        <input
+          type="number" step="0.01" min="0"
+          className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+          placeholder="Montant €"
+          value={form.amount}
+          onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
+        />
+        <button className="px-3 py-2 rounded-lg bg-blue-600 text-white">Ajouter</button>
+      </form>
 
-      <div className="space-y-1">
-        <div className="text-sm opacity-80">Note (facultatif)</div>
-        <input
-          className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-          placeholder="Ex : sortie resto amis / budget spécial / raison…"
-          value={state.note}
-          onChange={(e)=> setState(s=>({ ...s, note: e.target.value }))}
-        />
+      {/* Liste */}
+      <div className="space-y-2">
+        {list.length === 0 && (
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">
+            Aucune sortie automatique enregistrée. Ajoute un premier élément ci-dessus.
+          </div>
+        )}
+
+        {list.map(row => (
+          <div key={row.id} className="rounded-lg border border-zinc-200 dark:border-slate-700 p-3">
+            {editId === row.id ? (
+              <div className="grid md:grid-cols-[1fr,140px,auto] gap-2 items-center">
+                <input
+                  className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                  value={editRow.label}
+                  onChange={(e) => setEditRow(r => ({ ...r, label: e.target.value }))}
+                />
+                <input
+                  type="number" step="0.01" min="0"
+                  className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                  value={editRow.amount}
+                  onChange={(e) => setEditRow(r => ({ ...r, amount: e.target.value }))}
+                />
+                <div className="flex gap-2">
+                  <button onClick={saveEdit} type="button" className="px-3 py-2 rounded-lg bg-blue-600 text-white">OK</button>
+                  <button onClick={() => setEditId(null)} type="button" className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-slate-900">Annuler</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4"
+                    checked={!!checks[row.id]}
+                    onChange={() => toggleCheck(row.id)}
+                  />
+                  <div className="font-medium">{row.label}</div>
+                  <span className="badge">{(Number(row.amount)||0).toLocaleString('fr-FR', { style:'currency', currency:'EUR' })}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => startEdit(row)} className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-slate-900">Éditer</button>
+                  <button onClick={() => delItem(row.id)} className="px-3 py-2 rounded-lg bg-zinc-100 dark:bg-slate-900">Suppr.</button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">
-        Cette case est propre à chaque mois (<code>{key}</code>) et repart à zéro au changement de mois.
+      {/* Total */}
+      <div className="pt-2 border-t border-zinc-200 dark:border-slate-700 flex items-center justify-between">
+        <div className="text-sm opacity-80">Total des sorties automatiques</div>
+        <div className="text-sm font-semibold">
+          {total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+        </div>
       </div>
     </div>
-  )
+  );
 }
